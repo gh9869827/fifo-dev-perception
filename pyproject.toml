@@ -1,0 +1,18 @@
+[project]
+name = "fifo-dev-perception"
+version = "0.1.0"
+description = "Perception modules used across the `fifo-dev` and `fifo-bot` projects. Handles speech (text-to-speech and speech-to-text) and vision tasks."
+authors = [
+  { name = "Florent Gastoud" }
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "azure-cognitiveservices-speech",
+  "sounddevice"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
