@@ -30,7 +30,7 @@ class FifoSpeechCallback:
         """
         Called when the wake word is detected.
 
-        Parameters:
+        Args:
             keyword (str):
                 The keyword that was detected (as recognized by Azure).
 
@@ -42,7 +42,7 @@ class FifoSpeechCallback:
         """
         Called when full text has been recognized after wake word activation.
 
-        Parameters:
+        Args:
             text (str):
                 The full recognized speech-to-text output.
 
@@ -107,7 +107,7 @@ class FifoSpeech:
         """
         Initializes the FifoSpeech instance.
 
-        Parameters:
+        Args:
             wake_word_model (str):
                 Path to the .table model file used for offline keyword spotting.
 
@@ -190,7 +190,7 @@ class FifoSpeech:
         """
         Add text to the TTS queue for playback.
 
-        Parameters:
+        Args:
             text (str):
                 The text to be synthesized and spoken.
 
