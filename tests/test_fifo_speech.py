@@ -6,6 +6,7 @@ import queue
 import threading
 import importlib
 import multiprocessing
+import uuid
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 import pytest
@@ -27,9 +28,12 @@ def load_module():
 
 if TYPE_CHECKING:
     from multiprocessing import Queue as TypedQueue
-    from fifo_dev_perception.speech.fifo_speech import FifoSpeech, FifoSpeechCallback
+    from fifo_dev_perception.speech.fifo_speech import (
+        FifoSpeech,
+        FifoSpeechCallback,
+    )
     DummyCallbackBase = FifoSpeechCallback
-    MPQueue = TypedQueue[str | None]
+    MPQueue = TypedQueue[tuple[str, str] | None]
 else:
     DummyCallbackBase = load_module().FifoSpeechCallback
     MPQueue = multiprocessing.Queue
@@ -40,15 +44,19 @@ class DummyCallback(DummyCallbackBase):
     def __init__(self) -> None:
         self.keywords: list[str] = []
         self.texts: list[str] = []
+        self.tts: list[tuple[str, bool]] = []
 
-    def on_keyword(self, keyword: str, speech: FifoSpeech):
+    def on_stt_keyword_recognized(self, keyword: str, speech: FifoSpeech):
         self.keywords.append(keyword)
 
-    def on_text(self, text: str, speech: FifoSpeech):
+    def on_stt_text_recognized(self, text: str, speech: FifoSpeech):
         self.texts.append(text)
 
+    def on_tts_synthesis_done(self, request_id: str, success: bool):
+        self.tts.append((request_id, success))
 
-def drain_queue(q: MPQueue) -> list[str | None]:
+
+def drain_queue(q: MPQueue) -> list[tuple[str, str] | None]:
     """
     Drain all available items from a multiprocessing.Queue into a list.
 
@@ -64,7 +72,7 @@ def drain_queue(q: MPQueue) -> list[str | None]:
         list[str | None]:
             A list containing all items that were in the queue.
     """
-    result: list[str | None] = []
+    result: list[tuple[str, str] | None] = []
     try:
         while True:
             result.append(q.get_nowait())
@@ -111,13 +119,13 @@ def test_text_to_speech_queue_immediate():
     # Wait for the feeder thread to flush the first queued item (non-immediate)
     time.sleep(0.05)
 
-    fs.text_to_speech("second", True)
+    req2 = fs.text_to_speech("second", True)
 
     # Wait for the immediate TTS item ("second") to be enqueued before draining
     time.sleep(0.05)
 
     assert fs._tts_interrupt_event.is_set()  # pyright: ignore[reportPrivateUsage]
-    assert list(drain_queue(fs._tts_queue)) == ["second"]  # pyright: ignore[reportPrivateUsage]
+    assert list(drain_queue(fs._tts_queue)) == [(req2, "second")]  # pyright: ignore[reportPrivateUsage]
 
 
 def test_stt_skip_keyword_detection_sets_event():
@@ -127,9 +135,10 @@ def test_stt_skip_keyword_detection_sets_event():
 
 
 def test_tts_loop_runs_and_speaks(mock_speechsdk: SimpleNamespace):
-    fs, _ = make_speech()
+    fs, cb = make_speech()
     fs._tts_queue = multiprocessing.Queue()  # pyright: ignore[reportPrivateUsage]
-    fs._tts_queue.put("hello")  # pyright: ignore[reportPrivateUsage]
+    req_id = str(uuid.uuid4())
+    fs._tts_queue.put((req_id, "hello"))  # pyright: ignore[reportPrivateUsage]
     fs._tts_queue.put(None)  # pyright: ignore[reportPrivateUsage]
     interrupt = threading.Event()
     stop = threading.Event()
@@ -143,6 +152,7 @@ def test_tts_loop_runs_and_speaks(mock_speechsdk: SimpleNamespace):
     interrupt.set()
     thread.join(timeout=1)
     assert "hello" in mock_speechsdk.SpeechSynthesizer.spoken_texts
+    assert cb.tts == [(req_id, True)]
 
 
 def test_stt_loop_detects_and_recognizes(mock_speechsdk: SimpleNamespace):
