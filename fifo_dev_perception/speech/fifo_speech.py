@@ -200,7 +200,7 @@ class FifoSpeech:
         if immediate:
             logger.debug("[TTS] Immediate text requested")
             self._tts_interrupt_event.set()
-            while not self._tts_queue.empty():
+            while True:
                 try:
                     self._tts_queue.get_nowait()
                 except queue.Empty:
