@@ -154,7 +154,8 @@ def test_stt_loop_detects_and_recognizes(mock_speechsdk: SimpleNamespace):
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Requires fork-based multiprocessing and ALSA")
-def test_process_lifecycle_with_real_processes(_mock_speechsdk: SimpleNamespace):
+def test_process_lifecycle_with_real_processes(mock_speechsdk: SimpleNamespace):
+    _ = mock_speechsdk
     fs, _ = make_speech()
 
     fs.start()
