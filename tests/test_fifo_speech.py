@@ -105,8 +105,17 @@ def test_get_azure_key_missing():
 def test_text_to_speech_queue_immediate():
     fs, _ = make_speech()
     fs._tts_queue = multiprocessing.Queue()  # pyright: ignore[reportPrivateUsage]
+
     fs.text_to_speech("first", False)
+
+    # Wait for the feeder thread to flush the first queued item (non-immediate)
+    time.sleep(0.05)
+
     fs.text_to_speech("second", True)
+
+    # Wait for the immediate TTS item ("second") to be enqueued before draining
+    time.sleep(0.05)
+
     assert fs._tts_interrupt_event.is_set()  # pyright: ignore[reportPrivateUsage]
     assert list(drain_queue(fs._tts_queue)) == ["second"]  # pyright: ignore[reportPrivateUsage]
 
