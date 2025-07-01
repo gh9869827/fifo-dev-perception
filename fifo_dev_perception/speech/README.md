@@ -44,11 +44,14 @@ python3 -m pip install -e .
 from fifo_speech import FifoSpeech, FifoSpeechCallback
 
 class MyCallback(FifoSpeechCallback):
-    def on_keyword(self, keyword: str, speech: FifoSpeech):
+    def on_stt_keyword_recognized(self, keyword: str, speech: FifoSpeech):
         print("Wake word detected:", keyword)
 
-    def on_text(self, text: str, speech: FifoSpeech):
+    def on_stt_text_recognized(self, text: str, speech: FifoSpeech):
         print("Recognized text:", text)
+
+    def on_tts_synthesis_done(self, request_id: str, success: bool):
+        print("TTS done", request_id, success)
 
 speech = FifoSpeech(
     wake_word_model="keyword.table",

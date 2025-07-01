@@ -5,13 +5,14 @@ import re
 import os
 import threading
 import logging
+import uuid
 from typing import Any, cast, TYPE_CHECKING
 import azure.cognitiveservices.speech as speechsdk   # type: ignore  # No type stubs available
 
 if TYPE_CHECKING:
     from multiprocessing import Queue as TypedQueue
     from multiprocessing.synchronize import Event as MpEvent
-    TTSQueue = TypedQueue[str | None]
+    TTSQueue = TypedQueue[tuple[str, str] | None]
 else:
     TTSQueue = multiprocessing.Queue
     MpEvent = multiprocessing.Event
@@ -26,7 +27,7 @@ class FifoSpeechCallback:
     or when full speech text has been recognized.
     """
 
-    def on_keyword(self, keyword: str, speech: FifoSpeech):
+    def on_stt_keyword_recognized(self, keyword: str, speech: FifoSpeech):
         """
         Called when the wake word is detected.
 
@@ -38,7 +39,7 @@ class FifoSpeechCallback:
                 The FifoSpeech instance triggering the callback.
         """
 
-    def on_text(self, text: str, speech: FifoSpeech):
+    def on_stt_text_recognized(self, text: str, speech: FifoSpeech):
         """
         Called when full text has been recognized after wake word activation.
 
@@ -48,6 +49,18 @@ class FifoSpeechCallback:
 
             speech (FifoSpeech):
                 The FifoSpeech instance triggering the callback.
+        """
+
+    def on_tts_synthesis_done(self, request_id: str, success: bool):
+        """
+        Called when a TTS request has finished playback.
+
+        Args:
+            request_id (str):
+                The unique ID assigned to the TTS request when it was enqueued.
+
+            success (bool):
+                True if playback completed successfully; False otherwise.
         """
 
 class FifoSpeech:
@@ -186,9 +199,9 @@ class FifoSpeech:
         self._stt_proc.join()
         logger.debug("[Core] Processes joined")
 
-    def text_to_speech(self, text: str, immediate: bool):
+    def text_to_speech(self, text: str, immediate: bool) -> str:
         """
-        Add text to the TTS queue for playback.
+        Add text to the TTS queue for playback and return the request ID.
 
         Args:
             text (str):
@@ -197,6 +210,8 @@ class FifoSpeech:
             immediate (bool):
                 If True, clears the current queue before speaking this text.
         """
+        request_id = str(uuid.uuid4())
+
         if immediate:
             logger.debug("[TTS] Immediate text requested")
             self._tts_interrupt_event.set()
@@ -207,7 +222,8 @@ class FifoSpeech:
                     break
         else:
             logger.debug("[TTS] Queued text")
-        self._tts_queue.put(text)
+        self._tts_queue.put((request_id, text))
+        return request_id
 
     def _get_azure_key(self) -> str:
         """
@@ -322,13 +338,18 @@ class FifoSpeech:
         synthesizer = speechsdk.SpeechSynthesizer(speech_config, audio_config)
 
         done = threading.Event()
+        synthesis_success = True
 
         def on_completed(_evt: Any):
+            nonlocal synthesis_success
             logger.debug("[TTS] Synthesis completed")
+            synthesis_success = True
             done.set()
 
         def on_canceled(_evt: Any):
+            nonlocal synthesis_success
             logger.debug("[TTS] Synthesis canceled")
+            synthesis_success = False
             done.set()
 
         # Pylance: Type of "connect" is partially unknown
@@ -338,14 +359,16 @@ class FifoSpeech:
         def speak_loop():
             logger.debug("[TTS] Speak thread started")
             while True:
-                text = self._tts_queue.get()
-                if text is None:
+                item = self._tts_queue.get()
+                if item is None:
                     logger.debug("[TTS] Exiting speak_loop")
                     break
+                request_id, text = item
                 logger.debug("[TTS] Speaking")
                 done.clear()
                 synthesizer.speak_text_async(text)
                 done.wait()
+                self._callback.on_tts_synthesis_done(request_id, synthesis_success)
             logger.debug("[TTS] Speak thread finished")
 
         thread = threading.Thread(target=speak_loop, daemon=True)
@@ -356,6 +379,7 @@ class FifoSpeech:
                 interrupt_event.clear()
                 logger.debug("[TTS] Interrupt received, stopping current speech")
                 synthesizer.stop_speaking_async().get()
+                synthesis_success = False
                 done.set()
 
         logger.debug("[TTS] Waiting for speak thread to exit")
@@ -450,7 +474,7 @@ class FifoSpeech:
 
             def recognized_cb(evt: Any):
                 logger.debug("[STT] Keyword detected")
-                self._callback.on_keyword(evt.result.text, self)
+                self._callback.on_stt_keyword_recognized(evt.result.text, self)
                 keyword_done_event.set()
 
             def canceled_cb(_evt: Any):
@@ -502,7 +526,7 @@ class FifoSpeech:
                 )
                 if result.reason == speechsdk.ResultReason.RecognizedSpeech:
                     logger.debug("[STT] Recognized text")
-                    self._callback.on_text(result.text, self)
+                    self._callback.on_stt_text_recognized(result.text, self)
 
             logger.debug("[STT] Ending keyword loop")
             audio_capture_loop_event.set()
