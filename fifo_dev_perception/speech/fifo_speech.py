@@ -451,6 +451,8 @@ class FifoSpeech:
         def keyword_loop() -> None:
             logger.debug("[STT] Keyword loop started")
 
+            manual_cancel = False
+
             stream = speechsdk.audio.PushAudioInputStream()
             audio_config = speechsdk.audio.AudioConfig(stream=stream)
             speech_config = speechsdk.SpeechConfig(subscription=self._get_azure_key(),
@@ -479,7 +481,8 @@ class FifoSpeech:
 
             def canceled_cb(_evt: Any):
                 logger.debug("[STT] Keyword recognition canceled")
-                keyword_done_event.set()
+                if not manual_cancel:
+                    keyword_done_event.set()
 
             # Pylance: Type of "connect" is partially unknown
             keyword_recognizer.recognized.connect( # type: ignore[reportUnknownMemberType]
@@ -510,12 +513,15 @@ class FifoSpeech:
                 else:
                     logger.debug("[STT] Waiting for keyword")
                     keyword_done_event.clear()  # Safe: we are about to wait
+                    manual_cancel = False
                     keyword_recognizer.recognize_once_async(keyword_model)
                     keyword_done_event.wait()
                     logger.debug("[STT] Keyword triggered, stopping keyword recognizer")
+                    manual_cancel = True
                     keyword_recognizer.stop_recognition_async().get()
 
                 keyword_done_event.clear()
+                manual_cancel = False
                 if stop_event.is_set():
                     break
 
