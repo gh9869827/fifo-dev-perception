@@ -70,19 +70,27 @@ def mock_speechsdk(monkeypatch):
             return FakeFuture()
 
     class KeywordRecognizer:
+        """Fake keyword recognizer that exposes the last created instance."""
+
+        last_instance = None
+
         def __init__(self, audio_config=None):
             self.audio_config = audio_config
             self.recognized = FakeEvent()
             self.canceled = FakeEvent()
-            self._fired = False
+            KeywordRecognizer.last_instance = self
+
         def recognize_once_async(self, model=None):
-            if not self._fired:
-                evt = types.SimpleNamespace(result=types.SimpleNamespace(text="keyword"))
-                self.recognized.fire(evt)
-                self._fired = True
+            self.model = model
             return FakeFuture()
+
         def stop_recognition_async(self):
+            self.canceled.fire(types.SimpleNamespace())
             return FakeFuture()
+
+        def fire_recognized(self):
+            evt = types.SimpleNamespace(result=types.SimpleNamespace(text="keyword"))
+            self.recognized.fire(evt)
 
     class KeywordRecognitionModel:
         def __init__(self, path):

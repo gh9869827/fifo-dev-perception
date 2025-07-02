@@ -165,11 +165,45 @@ def test_stt_loop_detects_and_recognizes(mock_speechsdk: SimpleNamespace):
     )
     thread.start()
     time.sleep(0.05)
+    # Simulate wake word detection
+    mock_speechsdk.KeywordRecognizer.last_instance.fire_recognized()
+    time.sleep(0.05)
     stop.set()
     done.set()
     thread.join(timeout=1)
     assert cb.keywords == ["keyword"]
     assert cb.texts == [mock_speechsdk.SpeechRecognizer.next_result_text]
+
+
+def test_skip_during_wait_does_not_skip_next_iteration(mock_speechsdk: SimpleNamespace):
+    fs, cb = make_speech()
+    stop = threading.Event()
+    done = fs._stt_keyword_done_event  # pyright: ignore[reportPrivateUsage]
+    done.clear()
+    thread = threading.Thread(
+        target=fs._stt_loop,  # pyright: ignore[reportPrivateUsage]
+        args=(stop, done)
+    )
+    thread.start()
+
+    # Allow the keyword loop to start waiting and trigger skip until speech
+    for _ in range(5):
+        time.sleep(0.05)
+        if cb.texts:
+            break
+        fs.stt_skip_keyword_detection()
+
+    # Wait for the first recognition to complete
+    time.sleep(0.05)
+    assert cb.texts == [mock_speechsdk.SpeechRecognizer.next_result_text]
+
+    # Wait a bit longer to ensure a second iteration would run if keyword_done_event remained set
+    time.sleep(0.1)
+    assert cb.texts == [mock_speechsdk.SpeechRecognizer.next_result_text]
+
+    stop.set()
+    done.set()
+    thread.join(timeout=1)
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Requires fork-based multiprocessing and ALSA")
