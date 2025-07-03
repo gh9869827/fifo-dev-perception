@@ -29,6 +29,11 @@ def mock_speechsdk(monkeypatch):
     class ResultReason:
         RecognizedSpeech = 1
 
+    class CancellationReason:
+        Error = 1
+        EndOfStream = 2
+        CancelledByUser = 3
+
     class SpeechRecognitionResult:
         def __init__(self, text, reason):
             self.text = text
@@ -85,7 +90,12 @@ def mock_speechsdk(monkeypatch):
             return FakeFuture()
 
         def stop_recognition_async(self):
-            self.canceled.fire(types.SimpleNamespace())
+            evt = types.SimpleNamespace(
+                cancellation_details=types.SimpleNamespace(
+                    reason=CancellationReason.EndOfStream
+                )
+            )
+            self.canceled.fire(evt)
             return FakeFuture()
 
         def fire_recognized(self):
@@ -121,6 +131,7 @@ def mock_speechsdk(monkeypatch):
     fake_sdk.SpeechRecognitionResult = SpeechRecognitionResult
     fake_sdk.PropertyId = PropertyId
     fake_sdk.ResultReason = ResultReason
+    fake_sdk.CancellationReason = CancellationReason
     fake_sdk.audio = audio
 
     module = types.ModuleType("azure.cognitiveservices.speech")

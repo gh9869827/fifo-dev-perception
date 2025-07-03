@@ -451,7 +451,11 @@ class FifoSpeech:
         def keyword_loop() -> None:
             logger.debug("[STT] Keyword loop started")
 
-            manual_cancel = False
+            # The KeywordRecognizer fires a Canceled event both for errors and
+            # when recognition is stopped manually via ``stop_recognition_async()``.
+            # In practice, the SDK reports ``EndOfStream`` for such user-initiated
+            # stops. We use the ``CancellationReason`` to distinguish clean
+            # shutdowns from errors.
 
             stream = speechsdk.audio.PushAudioInputStream()
             audio_config = speechsdk.audio.AudioConfig(stream=stream)
@@ -469,6 +473,7 @@ class FifoSpeech:
             speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config,
                                                            audio_config=audio_config)
 
+
             def callback(indata: Any, _frames: Any, _time: Any, status: Any):
                 if status:
                     logger.warning("[STT] Audio warning: %s", status)
@@ -479,9 +484,12 @@ class FifoSpeech:
                 self._callback.on_stt_keyword_recognized(evt.result.text, self)
                 keyword_done_event.set()
 
-            def canceled_cb(_evt: Any):
+            def canceled_cb(evt: Any):
                 logger.debug("[STT] Keyword recognition canceled")
-                if not manual_cancel:
+                reason = getattr(
+                    getattr(evt, "cancellation_details", None), "reason", None
+                )
+                if reason != speechsdk.CancellationReason.EndOfStream:
                     keyword_done_event.set()
 
             # Pylance: Type of "connect" is partially unknown
@@ -513,15 +521,12 @@ class FifoSpeech:
                 else:
                     logger.debug("[STT] Waiting for keyword")
                     keyword_done_event.clear()  # Safe: we are about to wait
-                    manual_cancel = False
                     keyword_recognizer.recognize_once_async(keyword_model)
                     keyword_done_event.wait()
                     logger.debug("[STT] Keyword triggered, stopping keyword recognizer")
-                    manual_cancel = True
                     keyword_recognizer.stop_recognition_async().get()
 
                 keyword_done_event.clear()
-                manual_cancel = False
                 if stop_event.is_set():
                     break
 
