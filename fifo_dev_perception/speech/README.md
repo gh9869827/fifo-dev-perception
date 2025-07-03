@@ -40,6 +40,8 @@ python3 -m pip install -e .
 
 ## 🚀 Usage
 
+### 📝 Creating your python script
+
 ```python
 from fifo_speech import FifoSpeech, FifoSpeechCallback
 
@@ -70,6 +72,17 @@ speech.text_to_speech("Hello! I'm ready. How can I help?", immediate=True)
 
 speech.stop()
 speech.join()
+```
+
+### 🔐 Setting up your Azure API key
+
+Before running the script, export your Azure Speech key in your shell:
+
+```bash
+# Add a space before the command to prevent it from being saved in your shell history
+# AZURE_SPEECH_KEY is referenced via the `azure_key_env_var` argument in FifoSpeech
+ export AZURE_SPEECH_KEY="your-azure-speech-api-key"
+python your_script.py
 ```
 
 ---
