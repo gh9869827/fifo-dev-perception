@@ -12,7 +12,7 @@ It is designed to run on **Linux**, using **ALSA** device names. It provides pro
 
 ---
 
-## Requirements
+## 🛠️ Requirements
 
 - Python 3.10+
 - Azure Cognitive Services subscription (Speech)
@@ -20,13 +20,13 @@ It is designed to run on **Linux**, using **ALSA** device names. It provides pro
 - Linux (ALSA-based audio support only)
 - PortAudio (required by `sounddevice`)
 
-### System Dependencies
+### 🖥️ System Dependencies
 
 ```bash
 sudo apt install libportaudio2
 ```
 
-### Python Package
+### 📦 Python Package
 
 ```bash
 git clone https://github.com/gh9869827/fifo-dev-perception.git
@@ -38,7 +38,7 @@ python3 -m pip install -e .
 
 ---
 
-## Usage
+## 🚀 Usage
 
 ```python
 from fifo_speech import FifoSpeech, FifoSpeechCallback
@@ -74,7 +74,7 @@ speech.join()
 
 ---
 
-## License
+## ✅ License
 
 MIT — see [LICENSE](../../LICENSE) for details.
 
