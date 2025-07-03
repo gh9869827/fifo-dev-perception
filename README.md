@@ -25,13 +25,17 @@ See [`fifo_dev_perception/speech/README.md`](fifo_dev_perception/speech/README.m
 
 ### 👁 Vision
 
-Coming soon or under development.
+Coming soon.
 
 ---
 
 ## 📦 Installation
 
 ```bash
+git clone https://github.com/gh9869827/fifo-dev-perception.git
+
+cd fifo-dev-perception
+
 python3 -m pip install -e .
 ```
 
