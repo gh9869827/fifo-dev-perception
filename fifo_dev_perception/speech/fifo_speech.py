@@ -452,9 +452,9 @@ class FifoSpeech:
             logger.debug("[STT] Keyword loop started")
 
             # The KeywordRecognizer fires a Canceled event both for errors and
-            # when recognition is stopped manually via ``stop_recognition_async()``.
-            # In practice, the SDK reports ``EndOfStream`` for such user-initiated
-            # stops. We use the ``CancellationReason`` to distinguish clean
+            # when recognition is stopped manually via `stop_recognition_async()`.
+            # In practice, the SDK reports `EndOfStream` for such user-initiated
+            # stops. We use the `CancellationReason` to distinguish clean
             # shutdowns from errors.
 
             stream = speechsdk.audio.PushAudioInputStream()
@@ -473,7 +473,6 @@ class FifoSpeech:
             speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config,
                                                            audio_config=audio_config)
 
-
             def callback(indata: Any, _frames: Any, _time: Any, status: Any):
                 if status:
                     logger.warning("[STT] Audio warning: %s", status)
@@ -490,7 +489,10 @@ class FifoSpeech:
                     getattr(evt, "cancellation_details", None), "reason", None
                 )
                 if reason != speechsdk.CancellationReason.EndOfStream:
+                    logger.debug("[STT]    -> set keyword_done_event")
                     keyword_done_event.set()
+                else:
+                    logger.debug("[STT]    -> keep keyword_done_event unchanged")
 
             # Pylance: Type of "connect" is partially unknown
             keyword_recognizer.recognized.connect( # type: ignore[reportUnknownMemberType]
