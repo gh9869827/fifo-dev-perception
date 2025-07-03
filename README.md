@@ -3,9 +3,9 @@
 
 # fifo-dev-perception
 
-Perception modules for the FIFO robotics and assistant platform.
+Perception modules shared across the `fifo-bot-*` and `fifo-dev-*` repositories.
 
-This repository contains speech and vision components designed to run on edge devices. Modules are structured to be lightweight, modular, and easy to integrate into robotics and automation stacks.
+This repository provides speech and vision components optimized for edge devices. Modules are designed to be lightweight, modular, and easy to integrate into robotics and automation stacks.
 
 ---
 
@@ -56,7 +56,7 @@ It builds on their publicly documented APIs and SDKs under their respective lice
 
 ## 📄 Attribution
 
-This project uses the [Azure Cognitive Services Speech SDK](https://learn.microsoft.com/azure/cognitive-services/speech-service/),  
+This project uses the [Azure Cognitive Services Speech SDK](https://learn.microsoft.com/azure/cognitive-services/speech-service/),
 including support for keyword spotting models (`.table` files) and cloud-based speech-to-text and text-to-speech.
 
 Any code structure or logic adapted from Azure documentation is used under the terms of the MIT or standard documentation license.  
