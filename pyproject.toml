@@ -1,7 +1,7 @@
 [project]
 name = "fifo-dev-perception"
 version = "0.1.0"
-description = "Perception modules used across the `fifo-dev` and `fifo-bot` projects. Handles speech (text-to-speech and speech-to-text) and vision tasks."
+description = "Perception modules used across the `fifo-dev` and `fifo-bot` projects. Includes speech (wake-word detection, speech-to-text, and text-to-speech) and vision tasks."
 authors = [
   { name = "Florent Gastoud" }
 ]
