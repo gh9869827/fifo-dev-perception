@@ -79,7 +79,9 @@ speech.join()
 Before running the script, export your Azure Speech key in your shell:
 
 ```bash
-# Add a space before the command to prevent it from being saved in your shell history
+# Add a space before the command to prevent it from being saved in your bash shell history
+# (this behavior requires the HISTCONTROL environment variable to be set to 'ignorespace' or
+# 'ignoreboth', which is usually the default)
 # AZURE_SPEECH_KEY is referenced via the `azure_key_env_var` argument in FifoSpeech
  export AZURE_SPEECH_KEY="your-azure-speech-api-key"
 python your_script.py
