@@ -1,24 +1,42 @@
 # FifoSpeech
 
-FifoSpeech is a Python module for managing speech input and output using Azure Cognitive Services. It supports:
+**FifoSpeech** is a Python module for managing speech input and output using **Azure Cognitive Services**. It supports:
 
-- Wake word detection (offline, using a `.table` model)
-- Cloud-based speech-to-text (STT)
-- Cloud-based text-to-speech (TTS), with queue management and interruption support
+- **Wake word detection** (offline, using a `.table` model)
+- **Cloud-based speech-to-text (STT)**
+- **Cloud-based text-to-speech (TTS)** with queue management and interruption support
 
-It is designed to run on **Linux**, using **ALSA** device names. It provides process isolation for robustness and parallelism using two background processes:
-  - Wake word + STT
-  - TTS playback
+**FifoSpeech** is designed for **Linux** and currently supports **ALSA audio devices only**.  
+It extracts `plughw:X,Y` device names from the output of `sounddevice.query_devices()` and uses them for audio I/O.
+
+The following two tasks run in separate background processes, providing improved robustness and parallel execution:
+
+- **Wake word detection and speech-to-text (STT)**
+- **Text-to-speech (TTS) playback**
+
+---
+
+## 🎯 Project Status & Audience
+
+🚧 **Work in Progress** — This project is in **early development**. 🚧
+
+This is a personal project developed and maintained by a solo developer.  
+Contributions, ideas, and feedback are welcome, but development is driven by personal time and priorities.
+
+No official release or pre-release has been published yet. The code is provided for **preview and experimentation**.  
+**Use at your own risk.**
+
+Designed for **individual developers and robotics enthusiasts** experimenting with **speech and vision capabilities in hobby projects**.
 
 ---
 
 ## 🛠️ Requirements
 
 - Python 3.10+
-- Azure Cognitive Services subscription (Speech)
-- Azure Speech Custom Keyword model (`.table`)
-- Linux (ALSA-based audio support only)
-- PortAudio (required by `sounddevice`)
+- **Azure Cognitive Services (Speech)** (API key is required to create a FifoSpeech instance)
+- Azure Speech **Custom Keyword model** (`.table` file)
+- Linux with **ALSA** support
+- **PortAudio** (required by `sounddevice`)
 
 ### 🖥️ System Dependencies
 
@@ -26,7 +44,9 @@ It is designed to run on **Linux**, using **ALSA** device names. It provides pro
 sudo apt install libportaudio2
 ```
 
-### 📦 Python Package
+---
+
+## 📦 Installation
 
 ```bash
 git clone https://github.com/gh9869827/fifo-dev-perception.git
@@ -38,9 +58,9 @@ python3 -m pip install -e .
 
 ---
 
-## 🚀 Usage
+## 🚀 Usage Example
 
-### 📝 Creating your python script
+### 📝 Create your Python script
 
 ```python
 from fifo_speech import FifoSpeech, FifoSpeechCallback
@@ -58,8 +78,8 @@ class MyCallback(FifoSpeechCallback):
 speech = FifoSpeech(
     wake_word_model="keyword.table",
     callback=MyCallback(),
-    microphone="C922",          # Substring of input device
-    speaker="USB Audio",        # Substring of output device
+    microphone="C922",          # Substring of input device name
+    speaker="USB Audio",        # Substring of output device name
     voice_name="en-US-AvaMultilingualNeural",
     azure_key_env_var="AZURE_SPEECH_KEY",
     azure_region="westus2"
@@ -68,15 +88,17 @@ speech = FifoSpeech(
 speech.start()
 speech.text_to_speech("Hello! I'm ready. How can I help?", immediate=True)
 
-...
+# Run your main loop here...
 
 speech.stop()
 speech.join()
 ```
 
-### 🔐 Setting up your Azure API key
+---
 
-Before running the script, export your Azure Speech key in your shell:
+### 🔐 Set your Azure API key
+
+Export your Azure Speech key before running the script:
 
 ```bash
 # Add a space before the command to prevent it from being saved in your bash shell history
@@ -84,6 +106,7 @@ Before running the script, export your Azure Speech key in your shell:
 # 'ignoreboth', which is usually the default)
 # AZURE_SPEECH_KEY is referenced via the `azure_key_env_var` argument in FifoSpeech
  export AZURE_SPEECH_KEY="your-azure-speech-api-key"
+
 python your_script.py
 ```
 
@@ -91,21 +114,14 @@ python your_script.py
 
 ## ✅ License
 
-MIT — see [LICENSE](../../LICENSE) for details.
+MIT — see [LICENSE](../../LICENSE)
 
 ---
 
-## 📄 Disclaimer
+## 📄 Third-Party Disclaimer & Attribution
 
 This project is not affiliated with or endorsed by Microsoft or the Azure Speech Services team.  
-It builds on their publicly documented APIs and SDKs under their respective licenses.
+It builds on publicly documented [Azure Cognitive Services Speech SDKs](https://learn.microsoft.com/azure/cognitive-services/speech-service/) and APIs under their respective licenses.
 
----
-
-## 📄 Attribution
-
-This project uses the [Azure Cognitive Services Speech SDK](https://learn.microsoft.com/azure/cognitive-services/speech-service/),
-including support for keyword spotting models (`.table` files) and cloud-based speech-to-text and text-to-speech.
-
-Any code structure or logic adapted from Azure documentation is used under the terms of the MIT or standard documentation license.  
-See [Microsoft's official Speech SDK examples](https://github.com/Azure-Samples/cognitive-services-speech-sdk) for reference implementations.
+This includes support for keyword spotting models (`.table` files), cloud-based speech-to-text, and text-to-speech.  
+It uses the Azure Cognitive Services Speech SDK following **standard usage patterns** described in Azure documentation and examples. See [Microsoft's official Speech SDK examples](https://github.com/Azure-Samples/cognitive-services-speech-sdk) for reference; these examples are available under the MIT license.
