@@ -63,7 +63,7 @@ python3 -m pip install -e .
 ### 📝 Create your Python script
 
 ```python
-from fifo_speech import FifoSpeech, FifoSpeechCallback
+from fifo_dev_perception.speech.fifo_speech import FifoSpeech, FifoSpeechCallback
 
 class MyCallback(FifoSpeechCallback):
     def on_stt_keyword_recognized(self, keyword: str, speech: FifoSpeech):
